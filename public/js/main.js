@@ -1,3 +1,78 @@
+/* ================= TOKEN ENCODER/DECODER ================= */
+class TokenEncoder {
+  // Decode Base64 token back to settings
+  static decode(token) {
+    try {
+      // Restore Base64 padding and characters
+      let base64 = token.replace(/-/g, "+").replace(/_/g, "/");
+
+      // Add padding
+      while (base64.length % 4) {
+        base64 += "=";
+      }
+
+      const jsonString = atob(base64);
+      return JSON.parse(jsonString);
+    } catch (e) {
+      console.error("Token decode error:", e);
+      return null;
+    }
+  }
+}
+
+/* ================= URL PARAMETER PARSER ================= */
+function parseURLParams() {
+  const params = new URLSearchParams(window.location.search);
+
+  const config = {
+    rotationData: null,
+    timing: null,
+  };
+
+  // Check for token first (JWT-like)
+  const token = params.get("t");
+  if (token) {
+    const settings = TokenEncoder.decode(token);
+
+    if (settings) {
+      config.rotationData = settings.platforms;
+      config.timing = {
+        hold: settings.holdTime,
+        in: settings.animInTime,
+        out: settings.animOutTime,
+      };
+      return config;
+    } else {
+      console.error("Invalid token");
+    }
+  }
+
+  // Fallback: Parse platform data from full URL params
+  const dataParam = params.get("data");
+  if (dataParam) {
+    try {
+      config.rotationData = JSON.parse(dataParam);
+    } catch (e) {
+      console.error("Failed to parse data param:", e);
+    }
+  }
+
+  // Parse timing
+  const hold = params.get("hold");
+  const animIn = params.get("animIn");
+  const animOut = params.get("animOut");
+
+  if (hold || animIn || animOut) {
+    config.timing = {
+      hold: hold ? parseInt(hold) : null,
+      in: animIn ? parseInt(animIn) : null,
+      out: animOut ? parseInt(animOut) : null,
+    };
+  }
+
+  return config;
+}
+
 /* ================= PLATFORM DEFINITIONS ================= */
 const PLATFORMS = {
   tiktok: {
@@ -72,15 +147,15 @@ const PLATFORMS = {
   },
 };
 
-/* ================= ROTATION DATA ================= */
-const ROTATION_DATA = [
+/* ================= DEFAULT ROTATION DATA ================= */
+const DEFAULT_ROTATION_DATA = [
   { platform: "tiktok", text: "@nguyennhatlinh.official" },
   { platform: "discord", text: "discord.gg/xunAChFVkc" },
   { platform: "youtube", text: "@chokernguyen" },
 ];
 
 /* ================= CONFIG ================= */
-const CONFIG = {
+const DEFAULT_CONFIG = {
   BASE_CLASS:
     "flex items-center gap-2 p-1 px-2 rounded-md shadow-lg animate__animated",
   ANIMATION: {
@@ -96,7 +171,9 @@ const CONFIG = {
 
 /* ================= OVERLAY CONTROLLER ================= */
 class OverlayController {
-  constructor() {
+  constructor(rotationData, config) {
+    this.rotationData = rotationData;
+    this.config = config;
     this.currentIndex = 0;
     this.elements = this.cacheElements();
     this.init();
@@ -130,7 +207,7 @@ class OverlayController {
   }
 
   updateBackground(platform) {
-    this.elements.card.className = `${CONFIG.BASE_CLASS} ${platform.bg}`;
+    this.elements.card.className = `${this.config.BASE_CLASS} ${platform.bg}`;
   }
 
   animate(item) {
@@ -138,7 +215,7 @@ class OverlayController {
     if (!platform) return;
 
     const { card } = this.elements;
-    const { in: animIn, out: animOut } = CONFIG.ANIMATION;
+    const { in: animIn, out: animOut } = this.config.ANIMATION;
 
     // Start exit animation
     card.classList.remove(animIn);
@@ -152,33 +229,50 @@ class OverlayController {
       // Start enter animation
       card.classList.remove(animOut);
       card.classList.add(animIn);
-    }, CONFIG.TIMING.out);
+    }, this.config.TIMING.out);
   }
 
   init() {
-    const firstItem = ROTATION_DATA[0];
+    const firstItem = this.rotationData[0];
     const platform = PLATFORMS[firstItem.platform];
 
     if (!platform) return;
 
     this.updateContent(firstItem);
     this.updateBackground(platform);
-    this.elements.card.classList.add(CONFIG.ANIMATION.in);
+    this.elements.card.classList.add(this.config.ANIMATION.in);
   }
 
   next() {
-    this.currentIndex = (this.currentIndex + 1) % ROTATION_DATA.length;
-    this.animate(ROTATION_DATA[this.currentIndex]);
+    this.currentIndex = (this.currentIndex + 1) % this.rotationData.length;
+    this.animate(this.rotationData[this.currentIndex]);
   }
 
   start() {
-    const interval = CONFIG.TIMING.hold + CONFIG.TIMING.in + CONFIG.TIMING.out;
+    const interval =
+      this.config.TIMING.hold + this.config.TIMING.in + this.config.TIMING.out;
     setInterval(() => this.next(), interval);
   }
 }
 
 /* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded", () => {
-  const overlay = new OverlayController();
+  // Parse URL parameters (supports both token and full params)
+  const urlConfig = parseURLParams();
+
+  // Use URL data if available, otherwise use defaults
+  const rotationData = urlConfig.rotationData || DEFAULT_ROTATION_DATA;
+
+  // Merge timing config
+  const config = { ...DEFAULT_CONFIG };
+  if (urlConfig.timing) {
+    if (urlConfig.timing.hold !== null)
+      config.TIMING.hold = urlConfig.timing.hold;
+    if (urlConfig.timing.in !== null) config.TIMING.in = urlConfig.timing.in;
+    if (urlConfig.timing.out !== null) config.TIMING.out = urlConfig.timing.out;
+  }
+
+  // Initialize overlay
+  const overlay = new OverlayController(rotationData, config);
   overlay.start();
 });
