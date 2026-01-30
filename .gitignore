@@ -1,5 +1,12 @@
-/node_modules
-/src
+# Dependencies
+/node_modules/
+
+# Source (chỉ ignore nếu repo chỉ dùng để host output)
+/src/
+
+# Package files
 package-lock.json
 package.json
+
+# Tailwind config
 tailwind.config.js
