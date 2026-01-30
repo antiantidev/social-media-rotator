@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../public/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+  </head>
+
+  <body class="overflow-hidden bg-transparent">
+    <div class="flex justify-center items-center h-screen">
+      <div id="card" class="flex items-center gap-2 p-1 rounded-md shadow-lg">
+        <!-- Social icon -->
+        <img id="icon" class="w-12 h-12" alt="Platform icon" />
+
+        <!-- Social text -->
+        <span id="text" class="font-semibold text-base"></span>
+
+        <!-- CTA -->
+        <div
+          id="ctaBox"
+          class="flex gap-2 items-center justify-center ml-auto px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+        >
+          <img id="ctaIcon" class="w-4 h-4" alt="CTA icon" />
+          <span id="cta"></span>
+        </div>
+      </div>
+    </div>
+
+    <script src="./js/main.js"></script>
+  </body>
+</html>
