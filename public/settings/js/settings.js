@@ -213,8 +213,11 @@ class SettingsController {
       return;
     }
 
-    // Build URL with token - GitHub Pages root
-    const baseUrl = window.location.origin;
+    // Build URL with token - GitHub Pages with repo name
+    // Gets the base path (e.g., /social-media-rotator/)
+    const pathParts = window.location.pathname.split("/");
+    const repoName = pathParts[1]; // Gets 'social-media-rotator'
+    const baseUrl = `${window.location.origin}/${repoName}`;
     const tokenUrl = `${baseUrl}?t=${token}`;
 
     this.elements.generatedUrl.textContent = tokenUrl;
@@ -245,7 +248,9 @@ class SettingsController {
 
   getFullURLLength() {
     const settings = this.getSettings();
-    const baseUrl = window.location.origin;
+    const pathParts = window.location.pathname.split("/");
+    const repoName = pathParts[1];
+    const baseUrl = `${window.location.origin}/${repoName}`;
     const params = new URLSearchParams();
     params.set("data", JSON.stringify(settings.platforms));
     params.set("hold", settings.holdTime);
@@ -357,11 +362,12 @@ class SettingsController {
 
     if (settings.platforms.length === 0) return;
 
-    // Build preview URL with token - navigate from /settings/ to root /
+    // Build preview URL with token - navigate from /repo/settings/ to /repo/
     const token = TokenEncoder.encode(settings);
     if (!token) return;
 
-    const baseUrl = "/";
+    // Go up one level from settings to repo root
+    const baseUrl = "../";
     this.elements.previewFrame.src = `${baseUrl}?t=${token}`;
   }
 
